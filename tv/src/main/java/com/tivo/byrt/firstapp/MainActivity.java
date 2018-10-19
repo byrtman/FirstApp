@@ -34,5 +34,7 @@ public class MainActivity extends Activity {
 
         mWebView = findViewById(R.id.webView);
         mSurfaceView = findViewById(R.id.surfaceView);
+
+        mWebView.loadUrl("http://www.google.com");
     }
 }
