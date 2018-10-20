@@ -11,19 +11,19 @@ public class MyService extends AccessibilityService {
 
     @Override
     public void onCreate() {
-        Log.i(TAG, "MyAccessibilityService: onCreate() : \n" + this.getApplicationInfo());
+        Log.i(TAG, "MyAccessibilityService: onCreate() : " + this.getApplicationInfo().packageName);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        Log.i(TAG, "MyAccessibilityService: onAccessibilityEvent("+event+")");
+        Log.i(TAG, "MyAccessibilityService: onAccessibilityEvent("+AccessibilityEvent.eventTypeToString(event.getEventType())+")");
 
     }
 
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
-        Log.i(TAG, "MyAccessibilityService: onKeyEvent("+event+")");
+        Log.i(TAG, "MyAccessibilityService: onKeyEvent("+KeyEvent.keyCodeToString(event.getKeyCode())+")");
         return super.onKeyEvent(event);
     }
 
