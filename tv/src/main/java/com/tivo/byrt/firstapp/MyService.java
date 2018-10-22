@@ -7,7 +7,7 @@ import android.view.accessibility.AccessibilityEvent;
 
 public class MyService extends AccessibilityService {
 
-    private static final String TAG = "BYRT";
+    private static final String TAG = "MyService";
 
     @Override
     public void onCreate() {
