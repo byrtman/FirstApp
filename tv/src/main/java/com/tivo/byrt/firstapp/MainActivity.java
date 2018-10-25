@@ -22,22 +22,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.InputDevice;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.Toast;
-
-import com.bumptech.glide.load.model.ImageVideoWrapper;
 
 import java.util.List;
 
@@ -54,22 +48,12 @@ public class MainActivity extends Activity {
     private static final String TAG = "BYRT";
     private WebView mWebView;
     private SurfaceView mSurfaceView;
-    private AccessibilityManager mAccessibilityManager;
-    private AccessibilityManager.AccessibilityStateChangeListener mAccessibilityListener;
     private ViewGroup mLayout;
-    private boolean mTalkBackEnabled;
 
     private Button mTalkbackButton;
     private Button mWebviewButton;
+    private TalkBackHandlerView mTalkBackHandler;
 
-    // VirtualNavigation keys when Talk back is turned on
-    private static VirtualDpadKey mCenterVirtualDpadKey;
-    private static VirtualDpadKey mLeftVirtualDpadKey;
-    private static VirtualDpadKey mRightVirtualDpadKey;
-    private static VirtualDpadKey mUpVirtualDpadKey;
-    private static VirtualDpadKey mDownVirtualDpadKey;
-    private static boolean mShouldStartVirtualKeyPresses;
-    private Handler mVirtualNavigationFocusHandler;
     private View.OnKeyListener mOnKeyListener;
     private View.OnFocusChangeListener mOnFocusListener;
 
@@ -82,8 +66,8 @@ public class MainActivity extends Activity {
         mSurfaceView = findViewById(R.id.surfaceView);
         mTalkbackButton = findViewById(R.id.buttonTalkBack);
         mWebviewButton = findViewById(R.id.buttonWeb);
+        mTalkBackHandler = findViewById(R.id.vPad);
 
-        mVirtualNavigationFocusHandler = new Handler();
 
         mOnKeyListener = new View.OnKeyListener() {
             @Override
@@ -92,13 +76,11 @@ public class MainActivity extends Activity {
                     Log.d("KEY", "  SurfaceView onKey("+KeyEvent.keyCodeToString(keyCode)+") received");
                     if (v != null) {
                         Log.d(TAG, v.toString());
+                        Toast.makeText( getApplicationContext(), KeyEvent.keyCodeToString(keyCode), Toast.LENGTH_SHORT).show();
                     }
                 }
                 return false;
             }
-
-
-
         };
 
         mOnFocusListener = new View.OnFocusChangeListener() {
@@ -106,70 +88,42 @@ public class MainActivity extends Activity {
             public void onFocusChange(View v, boolean hasFocus) {
                 Log.d("FOCUS", "onFocusChange() "+getViewName(v)+" now has focus: " + hasFocus);
                 if (v != mSurfaceView && hasFocus) {
-                    disableVirtualNavigation();
+                    mTalkBackHandler.disableVirtualNavigation();
                 }
                 else if (hasFocus) {
-                    enableVirtualNavigation();
-                }
-            }
-
-            private String getViewName(View v) {
-                if (v == mSurfaceView) {
-                    return "SURFACE_VIEW";
-                } else if (v == mWebView) {
-                    return "WEB_VIEW";
-                } else if (v == mTalkbackButton) {
-                    return "TALKBACK_BUTTON";
-                } else if (v == mWebviewButton) {
-                    return "WEBVIEW_BUTTON";
-                } else {
-                    return "UNKNOWN";
+                    mTalkBackHandler.enableVirtualNavigation();
                 }
             }
         };
 
-        mSurfaceView.setFocusable(true);
-        mSurfaceView.requestFocus();
+        mLayout.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) {
+                Log.w(TAG, "onChildViewAdded("+parent+", "+child+")" );
+            }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+                Log.w(TAG, "onChildViewRemoved("+parent+", "+child+")" );
+
+            }
+        });
+
         mSurfaceView.setOnKeyListener(mOnKeyListener);
         mSurfaceView.setOnFocusChangeListener(mOnFocusListener);
         mWebviewButton.setOnFocusChangeListener(mOnFocusListener);
         mTalkbackButton.setOnFocusChangeListener(mOnFocusListener);
+    }
 
-        /**
-         * This code block to detect TalkBack enablement changes is GOOD
-         */
-        mAccessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
-        mAccessibilityListener = new AccessibilityManager.AccessibilityStateChangeListener() {
-            @Override
-            public void onAccessibilityStateChanged(boolean enabled) {
-                Log.d(TAG, "onAccessibilityStateChanged("+enabled+")");
-                Toast.makeText( getApplicationContext(), "Ouch!", Toast.LENGTH_SHORT).show();
-                if(enabled) {
-                    enableVirtualNavigation();
-                }
-                else {
-                    disableVirtualNavigation();
-                }
-            }
-        };
-        mAccessibilityManager.addAccessibilityStateChangeListener(mAccessibilityListener);
-
-        /**
-         * This code block to detect initial state of TalkBack enablement is GOOD
-         */
-        Log.d(TAG, "onCreate() is Accessibility enabled? : " + mAccessibilityManager.isEnabled() );
-        if (mAccessibilityManager.isEnabled())
-        {
-            enableVirtualNavigation();
-        }
-
+    public static String getViewName(View v) {
+        return v.getTag() != null ? (String) v.getTag() : v.getClass().getName();
     }
 
     private void outputFocusedViewParent() {
         for(int i = 0; i < mLayout.getChildCount(); i++) {
             View v = mLayout.getChildAt(i);
             if (v.hasFocus()) {
-                Log.i(TAG,"MainLayout child view has focus : "+v.getId());
+                Log.i(TAG,"MainLayout child view has focus : "+getViewName(v));
             }
         }
     }
@@ -201,7 +155,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy()");
-        mAccessibilityManager.removeAccessibilityStateChangeListener(mAccessibilityListener);
         if (mWebView != null) {
             mWebView.removeAllViews();
             mLayout.removeView(mWebView);
@@ -209,12 +162,6 @@ public class MainActivity extends Activity {
             mWebView = null;
         }
         super.onDestroy();
-    }
-
-    @Override
-    public boolean dispatchGenericMotionEvent(MotionEvent event) {
-//        Log.d(TAG, "MainActivity: dispatchGenericMotionEvent("+event+")");
-        return super.dispatchGenericMotionEvent(event);
     }
 
     @Override
@@ -256,11 +203,11 @@ public class MainActivity extends Activity {
         Toast.makeText( getApplicationContext(), "Ouch!", Toast.LENGTH_SHORT).show();
         if (am.isEnabled()) {
             Log.d(TAG, "Turning OFF TalkBack...");
-//            disableTalkBack();
+            disableTalkBack();
         }
         else {
             Log.d(TAG, "Turning ON TalkBack...");
-//            enableTalkBack();
+            enableTalkBack();
         }
 
     }
@@ -353,200 +300,5 @@ public class MainActivity extends Activity {
         }
     }
 
-    //On AndroidTV when Talkback is enabled keyvents are not sent to the application,
-    //rather navigation happens based on neighbors of the currently focused widget.
-    //Inorder to work around this issue...(feature?) we create a VirtualDpadNavigator
-    //that simulates the KeyEvents based on the focus changes on its VirtualDpadKeys.
-    private void enableVirtualNavigation() {
-        //remove any previous VirtualNavigation
-        disableVirtualNavigation();
-        mLeftVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.LEFT, this);
-        mRightVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.RIGHT, this);
-        mUpVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.UP, this);
-        mDownVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.DOWN, this);
-        mCenterVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.CENTER, this);
 
-        //Setup neighbors
-        mCenterVirtualDpadKey.setNextFocusLeftId(mLeftVirtualDpadKey.getId());
-        mCenterVirtualDpadKey.setNextFocusRightId(mRightVirtualDpadKey.getId());
-        mCenterVirtualDpadKey.setNextFocusUpId(mUpVirtualDpadKey.getId());
-        mCenterVirtualDpadKey.setNextFocusDownId(mDownVirtualDpadKey.getId());
-
-        Log.i(TAG,"Virtual Navigation enabled");
-        for(int i = 0; i < mLayout.getChildCount(); i++) {
-            View v = mLayout.getChildAt(i);
-            Log.i(TAG,"SurfaceLayout child at: "+i+" view: "+v);
-        }
-        //Set focus on center helepr to begin with
-        resetVirtualNavigationFocus();
-    }
-
-    private void disableVirtualNavigation() {
-        mShouldStartVirtualKeyPresses = false;
-        if(mCenterVirtualDpadKey != null) {
-            mLayout.removeView(mCenterVirtualDpadKey);
-            mCenterVirtualDpadKey = null;
-        }
-        if(mLeftVirtualDpadKey != null) {
-            mLayout.removeView(mLeftVirtualDpadKey);
-            mLeftVirtualDpadKey = null;
-        }
-        if(mRightVirtualDpadKey != null) {
-            mLayout.removeView(mRightVirtualDpadKey);
-            mRightVirtualDpadKey = null;
-        }
-        if(mUpVirtualDpadKey != null) {
-            mLayout.removeView(mUpVirtualDpadKey);
-            mUpVirtualDpadKey = null;
-        }
-        if(mDownVirtualDpadKey != null) {
-            mLayout.removeView(mDownVirtualDpadKey);
-            mDownVirtualDpadKey = null;
-        }
-    }
-
-    private void resetVirtualNavigationFocus() {
-        //Must delay requesting focus or else Android doesn't always assign focus, 100 ms is magic!
-        mVirtualNavigationFocusHandler.postDelayed(new Runnable() {
-                                                       @Override
-                                                       public void run() {
-                                                           if(mCenterVirtualDpadKey != null) {
-                                                               mCenterVirtualDpadKey.requestFocus();
-                                                           }
-                                                       }
-                                                   }
-                , 100);
-    }
-
-    private enum VirtualDpadKeyType {
-        CENTER,
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN
-    }
-
-    private class VirtualDpadKey extends android.support.v7.widget.AppCompatButton {
-
-        private static final boolean DEBUG = true;
-        private final VirtualDpadKeyType mVirtualDpadKeyType;
-        public VirtualDpadKey(VirtualDpadKeyType VirtualDpadKeyType, Context context) {
-            super(context);
-            mVirtualDpadKeyType = VirtualDpadKeyType;
-            setWidth(100);
-            setHeight(100);
-            switch(mVirtualDpadKeyType) {
-                case UP:
-                    setX(120);
-                    setY(10);
-                    break;
-                case DOWN:
-                    setX(120);
-                    setY(230);
-                    break;
-                case LEFT:
-                    setX(10);
-                    setY(120);
-                    break;
-                case RIGHT:
-                    setX(230);
-                    setY(120);
-                    break;
-                case CENTER:
-                    setX(120);
-                    setY(120);
-                    break;
-            }
-            setFocusable(true);
-            setId(mVirtualDpadKeyType.ordinal() + 1);
-            if(!DEBUG) {
-                setBackground(null);
-            }
-            setAccessibilityDelegate(new View.AccessibilityDelegate() {
-                public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
-                    super.onInitializeAccessibilityNodeInfo(host, info);
-//                    Log.d(TAG, "ANodeInfo: " + info);
-                    //Blanked to prevent talkback from announcing class/type and description
-                    info.setClassName("");
-                    info.setContentDescription("");
-                }
-            });
-            setOnFocusChangeListener(new OnFocusChangeListener() {
-
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if(hasFocus) {
-                        switch(mVirtualDpadKeyType) {
-                            case UP:
-                                if (!mShouldStartVirtualKeyPresses) {
-                                    return;
-                                }
-                                simulateKeyEvent(KeyEvent.KEYCODE_DPAD_UP);
-                                resetVirtualNavigationFocus();
-                                break;
-                            case DOWN:
-                                if (!mShouldStartVirtualKeyPresses) {
-                                    return;
-                                }
-                                simulateKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN);
-                                resetVirtualNavigationFocus();
-                                break;
-                            case LEFT:
-                                if (!mShouldStartVirtualKeyPresses) {
-                                    return;
-                                }
-                                simulateKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT);
-                                resetVirtualNavigationFocus();
-                                break;
-                            case RIGHT:
-                                if (!mShouldStartVirtualKeyPresses) {
-                                    return;
-                                }
-                                simulateKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT);
-                                resetVirtualNavigationFocus();
-                                break;
-                            case CENTER:
-                                if (!mShouldStartVirtualKeyPresses) {
-                                    mShouldStartVirtualKeyPresses = true;
-                                }
-                                break;
-                        }
-                    }
-                }
-            });
-            setOnKeyListener(new OnKeyListener() {
-
-                @Override
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if(keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_SEARCH) {
-                        //Set back key handled or else Android will pause the app. Let SurfaceView decide
-                        //if app must be paused.
-                        //Voice search key is handled here so that Tivo voice search opens and not google search
-                        //when Talkback feature is enabled
-                        return true;
-                    }
-                    return false;
-                }
-            });
-            setOnClickListener(new OnClickListener() {
-
-                @Override
-                public void onClick (View v) {
-                    simulateKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER);
-                }
-            });
-            //Adding this below the mSurfaceView
-            mLayout.addView(this, mVirtualDpadKeyType.ordinal());
-        }
-    }
-
-    private void simulateKeyEvent(int keyCode) {
-        Log.d("KEY", "simulateKeyEvent("+KeyEvent.keyCodeToString(keyCode)+")");
-        KeyEvent actionDown = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
-        actionDown.setSource(InputDevice.SOURCE_KEYBOARD);
-        mOnKeyListener.onKey(null, keyCode, actionDown);
-        KeyEvent actionUp = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
-        actionUp.setSource(InputDevice.SOURCE_KEYBOARD);
-        mOnKeyListener.onKey(null, keyCode, actionUp);
-    }
 }

@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.tivo.byrt.firstapp.MainLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainLayout">
+
+    <com.tivo.byrt.firstapp.TalkBackHandlerView
+        android:id="@+id/vPad"
+        android:layout_width="220dp"
+        android:layout_height="168dp"
+        android:layout_alignBottom="@+id/buttonWeb"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="165dp"
+        android:layout_marginBottom="-96dp" />
 
     <SurfaceView
         android:id="@+id/surfaceView"
@@ -24,7 +32,6 @@
         android:layout_alignParentEnd="true"
         android:layout_marginTop="83dp"
         android:layout_marginEnd="136dp"
-        android:onClick="toggleTalkBackState"
         android:text="@string/buttonTB" />
 
     <Button
@@ -35,7 +42,6 @@
         android:layout_alignParentEnd="true"
         android:layout_marginTop="82dp"
         android:layout_marginEnd="136dp"
-        android:onClick="toggleWebView"
         android:text="@string/buttonWeb" />
 
 </com.tivo.byrt.firstapp.MainLayout>
