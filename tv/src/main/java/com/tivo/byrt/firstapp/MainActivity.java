@@ -24,6 +24,7 @@ import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -54,7 +55,7 @@ public class MainActivity extends Activity {
     private Button mWebviewButton;
     private TalkBackHandlerView mTalkBackHandler;
 
-    private View.OnKeyListener mOnKeyListener;
+    private static View.OnKeyListener mOnKeyListener;
     private View.OnFocusChangeListener mOnFocusListener;
 
     @Override
@@ -66,8 +67,7 @@ public class MainActivity extends Activity {
         mSurfaceView = findViewById(R.id.surfaceView);
         mTalkbackButton = findViewById(R.id.buttonTalkBack);
         mWebviewButton = findViewById(R.id.buttonWeb);
-        mTalkBackHandler = findViewById(R.id.vPad);
-
+        mTalkBackHandler = new TalkBackHandlerView(this, null);
 
         mOnKeyListener = new View.OnKeyListener() {
             @Override
@@ -76,8 +76,9 @@ public class MainActivity extends Activity {
                     Log.d("KEY", "  SurfaceView onKey("+KeyEvent.keyCodeToString(keyCode)+") received");
                     if (v != null) {
                         Log.d(TAG, v.toString());
-                        Toast.makeText( getApplicationContext(), KeyEvent.keyCodeToString(keyCode), Toast.LENGTH_SHORT).show();
                     }
+                    Toast toast = Toast.makeText( getBaseContext(), KeyEvent.keyCodeToString(keyCode), Toast.LENGTH_SHORT);
+                    toast.show();
                 }
                 return false;
             }
@@ -88,10 +89,10 @@ public class MainActivity extends Activity {
             public void onFocusChange(View v, boolean hasFocus) {
                 Log.d("FOCUS", "onFocusChange() "+getViewName(v)+" now has focus: " + hasFocus);
                 if (v != mSurfaceView && hasFocus) {
-                    mTalkBackHandler.disableVirtualNavigation();
+//                    mTalkBackHandler.disableVirtualNavigation();
                 }
                 else if (hasFocus) {
-                    mTalkBackHandler.enableVirtualNavigation();
+//                    mTalkBackHandler.enableVirtualNavigation();
                 }
             }
         };
@@ -99,7 +100,7 @@ public class MainActivity extends Activity {
         mLayout.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
             @Override
             public void onChildViewAdded(View parent, View child) {
-                Log.w(TAG, "onChildViewAdded("+parent+", "+child+")" );
+                Log.w(TAG, "onChildViewAdded("+getViewName(parent)+", "+getViewName(child)+")" );
             }
 
             @Override
@@ -109,14 +110,41 @@ public class MainActivity extends Activity {
             }
         });
 
+        mTalkbackButton.setFocusable(false);
+        mWebviewButton.setFocusable(false);
+        mLayout.addView(mTalkBackHandler);
         mSurfaceView.setOnKeyListener(mOnKeyListener);
         mSurfaceView.setOnFocusChangeListener(mOnFocusListener);
         mWebviewButton.setOnFocusChangeListener(mOnFocusListener);
         mTalkbackButton.setOnFocusChangeListener(mOnFocusListener);
+
+        mWebviewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleWebView(v);
+            }
+        });
+
+        mTalkbackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleTalkBackState(v);
+            }
+        });
     }
 
     public static String getViewName(View v) {
         return v.getTag() != null ? (String) v.getTag() : v.getClass().getName();
+    }
+
+    public static void simulateKeyEvent(int keyCode) {
+        Log.d(TAG, "simulateKeyEvent("+KeyEvent.keyCodeToString(keyCode)+")");
+        KeyEvent actionDown = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
+        actionDown.setSource(InputDevice.SOURCE_KEYBOARD);
+        mOnKeyListener.onKey(null, keyCode, actionDown);
+        KeyEvent actionUp = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
+        actionUp.setSource(InputDevice.SOURCE_KEYBOARD);
+        mOnKeyListener.onKey(null, keyCode, actionUp);
     }
 
     private void outputFocusedViewParent() {
@@ -143,6 +171,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume()");
+        for (int i=0; i < mLayout.getChildCount(); i++) {
+            View child = mLayout.getChildAt(i);
+            Log.d(TAG, "_Child view: " + getViewName(child) + ", " + child.hasFocus());
+        }
         super.onResume();
     }
 
@@ -167,11 +199,10 @@ public class MainActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            Log.d("KEY", "MainActivity: dispatchKeyEvent("+outputKeyEvent(event)+")");
+            Log.d(TAG, "MainActivity: dispatchKeyEvent("+outputKeyEvent(event)+")");
             outputFocusedViewParent();
         }
         if (event.getKeyCode() == KEYCODE_BACK) {
-            mTalkbackButton.requestFocus();
             return true;
         }
 
@@ -299,6 +330,4 @@ public class MainActivity extends Activity {
             Log.e(TAG, "Failed to disable accessibility: " + e);
         }
     }
-
-
 }

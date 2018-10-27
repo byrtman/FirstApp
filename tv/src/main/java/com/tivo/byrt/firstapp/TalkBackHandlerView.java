@@ -5,54 +5,44 @@ import android.os.Handler;
 import android.support.v7.widget.AppCompatButton;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 /**
  * TODO: document your custom view class.
  */
-public class TalkBackHandlerView extends RelativeLayout {
+public class TalkBackHandlerView extends ViewGroup {
 
     private static final String TAG = "BYRT";
 
     // VirtualNavigation keys when Talk back is turned on
-    private static VirtualDpadKey mCenterVirtualDpadKey;
-    private static VirtualDpadKey mLeftVirtualDpadKey;
-    private static VirtualDpadKey mRightVirtualDpadKey;
-    private static VirtualDpadKey mUpVirtualDpadKey;
-    private static VirtualDpadKey mDownVirtualDpadKey;
+    private VirtualDpadKey mCenterVirtualDpadKey;
+    private VirtualDpadKey mLeftVirtualDpadKey;
+    private VirtualDpadKey mRightVirtualDpadKey;
+    private VirtualDpadKey mUpVirtualDpadKey;
+    private VirtualDpadKey mDownVirtualDpadKey;
 
     private ViewGroup mLayout;
     private Handler mVirtualNavigationFocusHandler;
-    private View.OnKeyListener mOnKeyListener;
     private AccessibilityManager mAccessibilityManager;
     private AccessibilityManager.AccessibilityStateChangeListener mAccessibilityListener;
 
     public TalkBackHandlerView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setTag("VPAD Handler View");
+
+//        setX(100);
+//        setY(100);
         mLayout = this;
+        mLayout.setLayoutParams(new ViewGroup.LayoutParams(20, 20));
+
         mVirtualNavigationFocusHandler = new Handler();
-
-        mOnKeyListener = new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                    Log.d("KEY", "  SurfaceView onKey("+KeyEvent.keyCodeToString(keyCode)+") received");
-                    if (v != null) {
-                        Log.d(TAG, v.toString());
-                        Toast.makeText( getContext(), KeyEvent.keyCodeToString(keyCode), Toast.LENGTH_SHORT).show();
-                    }
-                }
-                return false;
-            }
-        };
-
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+        enableVirtualNavigation();
     }
 
     @Override
@@ -73,12 +63,12 @@ public class TalkBackHandlerView extends RelativeLayout {
             public void onAccessibilityStateChanged(boolean enabled) {
                 Log.d(TAG, "onAccessibilityStateChanged("+enabled+")");
                 Toast.makeText( getContext(), "Ouch!", Toast.LENGTH_SHORT).show();
-                if(enabled) {
-                    enableVirtualNavigation();
-                }
-                else {
-                    disableVirtualNavigation();
-                }
+//                if(enabled) {
+//                    enableVirtualNavigation();
+//                }
+//                else {
+//                    disableVirtualNavigation();
+//                }
             }
         };
         mAccessibilityManager.addAccessibilityStateChangeListener(mAccessibilityListener);
@@ -87,23 +77,30 @@ public class TalkBackHandlerView extends RelativeLayout {
          * This code block to detect initial state of TalkBack enablement is GOOD
          */
         Log.d(TAG, "onCreate() is Accessibility enabled? : " + mAccessibilityManager.isEnabled() );
-        if (mAccessibilityManager.isEnabled())
-        {
-            enableVirtualNavigation();
-        }
+//        if (mAccessibilityManager.isEnabled())
+//        {
+
+//        }
     }
 
     @Override
     protected void onDetachedFromWindow() {
         mAccessibilityManager.removeAccessibilityStateChangeListener(mAccessibilityListener);
+        disableVirtualNavigation();
         super.onDetachedFromWindow();
     }
 
+    @Override
+    public void requestChildFocus(View child, View focused) {
+        Log.d(TAG, "requestChildFocus("+MainActivity.getViewName(child)+", "+MainActivity.getViewName(focused)+")");
+        super.requestChildFocus(child, focused);
+    }
+
     private enum VirtualDpadKeyType {
-        CENTER,
-        LEFT,
-        RIGHT,
         UP,
+        LEFT,
+        CENTER,
+        RIGHT,
         DOWN
     }
 
@@ -114,30 +111,32 @@ public class TalkBackHandlerView extends RelativeLayout {
         public VirtualDpadKey(VirtualDpadKeyType VirtualDpadKeyType, Context context) {
             super(context);
             mVirtualDpadKeyType = VirtualDpadKeyType;
-            setWidth(100);
-            setHeight(100);
+            int buttonSize = 5;
+            int x = 10;
+            int y = 10;
             switch(mVirtualDpadKeyType) {
                 case UP:
-                    setX(120);
-                    setY(10);
+                    x += buttonSize;
+                    y += 0;
                     break;
                 case DOWN:
-                    setX(120);
-                    setY(230);
+                    x += buttonSize;
+                    y += buttonSize*2;
                     break;
                 case LEFT:
-                    setX(10);
-                    setY(120);
+                    x += 0;
+                    y += buttonSize;
                     break;
                 case RIGHT:
-                    setX(230);
-                    setY(120);
+                    x += buttonSize*2;
+                    y += buttonSize;
                     break;
                 case CENTER:
-                    setX(120);
-                    setY(120);
+                    x += buttonSize;
+                    y += buttonSize;
                     break;
             }
+            setFrame(x, y, x+buttonSize,y+buttonSize);
             setFocusable(true);
             setTag(mVirtualDpadKeyType.name());
             setId(mVirtualDpadKeyType.ordinal() + 1);
@@ -184,7 +183,7 @@ public class TalkBackHandlerView extends RelativeLayout {
 
                 @Override
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if(keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_SEARCH) {
+                    if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_SEARCH) {
                         //Set back key handled or else Android will pause the app. Let SurfaceView decide
                         //if app must be paused.
                         //Voice search key is handled here so that Tivo voice search opens and not google search
@@ -194,13 +193,14 @@ public class TalkBackHandlerView extends RelativeLayout {
                     return false;
                 }
             });
-            setOnClickListener(new OnClickListener() {
 
-                @Override
-                public void onClick (View v) {
-                    simulateKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER);
-                }
+            setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick (View v) {
+                        simulateKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER);
+                    }
             });
+
             //Adding this below the mSurfaceView
             mLayout.addView(this, mVirtualDpadKeyType.ordinal());
         }
@@ -213,10 +213,10 @@ public class TalkBackHandlerView extends RelativeLayout {
     public void enableVirtualNavigation() {
         //remove any previous VirtualNavigation
         disableVirtualNavigation();
-        mCenterVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.CENTER, getContext());
-        mLeftVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.LEFT, getContext());
-        mRightVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.RIGHT, getContext());
         mUpVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.UP, getContext());
+        mLeftVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.LEFT, getContext());
+        mCenterVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.CENTER, getContext());
+        mRightVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.RIGHT, getContext());
         mDownVirtualDpadKey = new VirtualDpadKey(VirtualDpadKeyType.DOWN, getContext());
 
         //Setup neighbors
@@ -228,9 +228,9 @@ public class TalkBackHandlerView extends RelativeLayout {
         Log.i(TAG,"Virtual Navigation enabled");
         for(int i = 0; i < mLayout.getChildCount(); i++) {
             View v = mLayout.getChildAt(i);
-            Log.i(TAG,"SurfaceLayout child at: "+i+" view: "+MainActivity.getViewName(v));
+            Log.i(TAG,"VPAD child at: "+i+" view: "+MainActivity.getViewName(v));
         }
-        //Set focus on center helepr to begin with
+        //Set focus on center helper to begin with
         resetVirtualNavigationFocus();
     }
 
@@ -262,24 +262,16 @@ public class TalkBackHandlerView extends RelativeLayout {
         mVirtualNavigationFocusHandler.postDelayed(new Runnable() {
                                                        @Override
                                                        public void run() {
-                                                           if(mCenterVirtualDpadKey != null) {
-                                                               mCenterVirtualDpadKey.requestFocus();
-                                                           }
-                                                       }
-                                                   }
-                , 100);
+                   if(mCenterVirtualDpadKey != null) {
+                       mCenterVirtualDpadKey.requestFocus();
+                   }
+               }
+           }
+        , 100);
     }
 
-
-
     private void simulateKeyEvent(int keyCode) {
-        Log.d("KEY", "simulateKeyEvent("+KeyEvent.keyCodeToString(keyCode)+")");
-        KeyEvent actionDown = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
-        actionDown.setSource(InputDevice.SOURCE_KEYBOARD);
-        mOnKeyListener.onKey(null, keyCode, actionDown);
-        KeyEvent actionUp = new KeyEvent(KeyEvent.ACTION_UP, keyCode);
-        actionUp.setSource(InputDevice.SOURCE_KEYBOARD);
-        mOnKeyListener.onKey(null, keyCode, actionUp);
+        MainActivity.simulateKeyEvent(keyCode);
     }
 }
 
