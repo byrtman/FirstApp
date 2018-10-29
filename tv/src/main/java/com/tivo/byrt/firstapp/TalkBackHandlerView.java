@@ -35,8 +35,6 @@ public class TalkBackHandlerView extends ViewGroup {
         super(context, attrs);
         setTag("VPAD Handler View");
 
-//        setX(100);
-//        setY(100);
         mLayout = this;
         mLayout.setLayoutParams(new ViewGroup.LayoutParams(20, 20));
 
@@ -63,24 +61,11 @@ public class TalkBackHandlerView extends ViewGroup {
             public void onAccessibilityStateChanged(boolean enabled) {
                 Log.d(TAG, "onAccessibilityStateChanged("+enabled+")");
                 Toast.makeText( getContext(), "Ouch!", Toast.LENGTH_SHORT).show();
-//                if(enabled) {
-//                    enableVirtualNavigation();
-//                }
-//                else {
-//                    disableVirtualNavigation();
-//                }
             }
         };
         mAccessibilityManager.addAccessibilityStateChangeListener(mAccessibilityListener);
 
-        /**
-         * This code block to detect initial state of TalkBack enablement is GOOD
-         */
         Log.d(TAG, "onCreate() is Accessibility enabled? : " + mAccessibilityManager.isEnabled() );
-//        if (mAccessibilityManager.isEnabled())
-//        {
-
-//        }
     }
 
     @Override
@@ -147,8 +132,8 @@ public class TalkBackHandlerView extends ViewGroup {
                 public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
                     super.onInitializeAccessibilityNodeInfo(host, info);
                     //Blanked to prevent talkback from announcing class/type and description
-                    info.setClassName("");
-                    info.setContentDescription("");
+                    info.setClassName("Vpad");
+                    info.setContentDescription("Fuck this guy!");
                 }
             });
             setOnFocusChangeListener(new OnFocusChangeListener() {

@@ -31,7 +31,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
 import android.webkit.WebView;
-import android.widget.Button;
 import android.widget.Toast;
 
 import java.util.List;
@@ -39,7 +38,6 @@ import java.util.List;
 import static android.view.KeyEvent.ACTION_DOWN;
 import static android.view.KeyEvent.ACTION_MULTIPLE;
 import static android.view.KeyEvent.ACTION_UP;
-import static android.view.KeyEvent.KEYCODE_BACK;
 
 /*
  * MainActivity class that loads {@link MainLayout}.
@@ -51,8 +49,6 @@ public class MainActivity extends Activity {
     private SurfaceView mSurfaceView;
     private ViewGroup mLayout;
 
-    private Button mTalkbackButton;
-    private Button mWebviewButton;
     private TalkBackHandlerView mTalkBackHandler;
 
     private static View.OnKeyListener mOnKeyListener;
@@ -65,8 +61,6 @@ public class MainActivity extends Activity {
 
         mLayout = findViewById(R.id.mainLayout);
         mSurfaceView = findViewById(R.id.surfaceView);
-        mTalkbackButton = findViewById(R.id.buttonTalkBack);
-        mWebviewButton = findViewById(R.id.buttonWeb);
         mTalkBackHandler = new TalkBackHandlerView(this, null);
 
         mOnKeyListener = new View.OnKeyListener() {
@@ -79,6 +73,12 @@ public class MainActivity extends Activity {
                     }
                     Toast toast = Toast.makeText( getBaseContext(), KeyEvent.keyCodeToString(keyCode), Toast.LENGTH_SHORT);
                     toast.show();
+
+                    if(keyCode == KeyEvent.KEYCODE_1) {
+                        toggleTalkBackState(v);
+                    } else if (keyCode == KeyEvent.KEYCODE_2) {
+                        toggleWebView(v);
+                    }
                 }
                 return false;
             }
@@ -88,12 +88,6 @@ public class MainActivity extends Activity {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 Log.d("FOCUS", "onFocusChange() "+getViewName(v)+" now has focus: " + hasFocus);
-                if (v != mSurfaceView && hasFocus) {
-//                    mTalkBackHandler.disableVirtualNavigation();
-                }
-                else if (hasFocus) {
-//                    mTalkBackHandler.enableVirtualNavigation();
-                }
             }
         };
 
@@ -110,27 +104,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        mTalkbackButton.setFocusable(false);
-        mWebviewButton.setFocusable(false);
         mLayout.addView(mTalkBackHandler);
         mSurfaceView.setOnKeyListener(mOnKeyListener);
-        mSurfaceView.setOnFocusChangeListener(mOnFocusListener);
-        mWebviewButton.setOnFocusChangeListener(mOnFocusListener);
-        mTalkbackButton.setOnFocusChangeListener(mOnFocusListener);
-
-        mWebviewButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleWebView(v);
-            }
-        });
-
-        mTalkbackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleTalkBackState(v);
-            }
-        });
     }
 
     public static String getViewName(View v) {
@@ -201,9 +176,17 @@ public class MainActivity extends Activity {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             Log.d(TAG, "MainActivity: dispatchKeyEvent("+outputKeyEvent(event)+")");
             outputFocusedViewParent();
-        }
-        if (event.getKeyCode() == KEYCODE_BACK) {
-            return true;
+
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_BACK:
+                case KeyEvent.KEYCODE_1:
+                case KeyEvent.KEYCODE_2:
+                    simulateKeyEvent(event.getKeyCode());
+                    return true;
+                default:
+                    /* do nothing */
+
+            }
         }
 
         return super.dispatchKeyEvent(event);
