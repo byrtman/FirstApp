@@ -18,4 +18,5 @@
     <string name="error_fragment_message">An error occurred</string>
     <string name="dismiss_error">Dismiss</string>
     <string name="buttonWeb">Web View</string>
+    <string name="title_activity_main_floating_buton">MainFloatingButonActivity</string>
 </resources>

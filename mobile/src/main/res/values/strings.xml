@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">FirstApp</string>
+    <string name="app_name">Stock-A-Day</string>
     <string name="edit_message">Enter a message</string>
-    <string name="button_send">Send</string>
+    <string name="button_send">Today\'s Pick</string>
+    <string name="new_stock_presented">Here\'s the lastest ticker to play with. Please select a time to trigger your order. Good luck!</string>
+    <string name="title_activity_main2">Main2Activity</string>
 </resources>
