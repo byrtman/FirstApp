@@ -6,38 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".MainLayout">
 
-    <SurfaceView
+    <com.tivo.byrt.firstapp.MySurfaceView
         android:id="@+id/surfaceView"
-        android:layout_width="668dp"
-        android:layout_height="430dp"
+        android:layout_width="867dp"
+        android:layout_height="489dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:tag="SURFACE" />
-
-    <Button
-        android:id="@+id/buttonWeb"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/buttonTalkBack"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="94dp"
-        android:layout_marginEnd="87dp"
-        android:focusable="false"
-        android:tag="@string/buttonWeb"
-        android:text="@string/buttonWeb" />
-
-    <Button
-        android:id="@+id/buttonTalkBack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="147dp"
-        android:layout_marginEnd="83dp"
-        android:focusable="false"
-        android:tag="@string/buttonTB"
-        android:text="@string/buttonTB" />
 
 </com.tivo.byrt.firstapp.MainLayout>
