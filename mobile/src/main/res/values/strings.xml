@@ -4,4 +4,23 @@
     <string name="button_send">Today\'s Pick</string>
     <string name="new_stock_presented">Here\'s the lastest ticker to play with. Please select a time to trigger your order. Good luck!</string>
     <string name="title_activity_main2">Main2Activity</string>
+    <string name="crapString">blarg</string>
+    <string name="order">Order</string>
+    <string name="name">Name</string>
+    <string name="enter_your_android_string_unknownname">Enter your name</string>
+    <string name="address">Address</string>
+    <string name="enter_address">Enter address</string>
+    <string name="phone">Phone</string>
+    <string name="enter_phone_number">Enter phone number</string>
+    <string name="same_day_messanger_service">Same day messenger service</string>
+    <string name="choose_a_delivery_method">Choose a delivery method</string>
+    <string name="next_day_ground_delivery">Next day ground delivery</string>
+    <string name="pick_up">Pick up</string>
+
+    <string-array name="labels_array">
+        <item>Home</item>
+        <item>Work</item>
+        <item>Mobile</item>
+        <item>Other</item>
+    </string-array>
 </resources>

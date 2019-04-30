@@ -1,1 +1,1 @@
-include ':mobile', ':tv', ':talkback', ':switchaccess', ':proguard', ':compositor', ':utils', ':accessibility_utils'
+include ':mobile', ':tv'
